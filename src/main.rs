@@ -1,3 +1,7 @@
+use sha1::Sha1;
+
+mod sha1;
+
 fn main() {
-    println!("Hello, world!");
+    let mut sha1 = Sha1::new();
 }
