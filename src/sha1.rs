@@ -43,6 +43,13 @@ impl Sha1 {
                 b = a;
                 a = temp;
             }
+            // Add the compressed chunk to the current hash value.
+            // https://datatracker.ietf.org/doc/html/rfc3174#section-6.1 (e)
+            h0 = h0.wrapping_add(a);
+            h1 = h1.wrapping_add(b);
+            h2 = h2.wrapping_add(c);
+            h3 = h3.wrapping_add(d);
+            h4 = h4.wrapping_add(e);
         }
         [0; 20]
     }
