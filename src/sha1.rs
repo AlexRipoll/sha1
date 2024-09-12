@@ -11,7 +11,7 @@ impl Sha1 {
         Self
     }
 
-    pub fn hash(&mut self, key: &str) -> [u8; 20] {
+    pub fn digest(&mut self, key: &str) -> [u8; 20] {
         let (mut h0, mut h1, mut h2, mut h3, mut h4) = (H0, H1, H2, H3, H4);
 
         let msg = self.pad_message(key);
@@ -43,6 +43,7 @@ impl Sha1 {
                 b = a;
                 a = temp;
             }
+
             // Add the compressed chunk to the current hash value.
             // https://datatracker.ietf.org/doc/html/rfc3174#section-6.1 (e)
             h0 = h0.wrapping_add(a);
@@ -51,12 +52,21 @@ impl Sha1 {
             h3 = h3.wrapping_add(d);
             h4 = h4.wrapping_add(e);
         }
-        [0; 20]
+
+        let mut digest = [0u8; 20];
+
+        digest[0..4].copy_from_slice(&h0.to_be_bytes());
+        digest[4..8].copy_from_slice(&h1.to_be_bytes());
+        digest[8..12].copy_from_slice(&h2.to_be_bytes());
+        digest[12..16].copy_from_slice(&h3.to_be_bytes());
+        digest[16..20].copy_from_slice(&h4.to_be_bytes());
+
+        digest
     }
 
     fn pad_message(&mut self, message: &str) -> Vec<u8> {
         let mut bytes = message.as_bytes().to_vec();
-        let bit_length: u64 = bytes.len().saturating_mul(8) as u64;
+        let bit_length: u64 = bytes.len().wrapping_mul(8) as u64;
 
         // Append the '1' at the most most significant bit: 10000000 (0x80)
         bytes.push(0x80);
