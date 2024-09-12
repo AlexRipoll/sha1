@@ -16,7 +16,34 @@ impl Sha1 {
 
         let msg = self.pad_message(key);
 
-        for chunk in msg.chunks(64) {}
+        for chunk in msg.chunks(64) {
+            let w = self.build_w_sequence(chunk);
+            let (mut a, mut b, mut c, mut d, mut e) = (H0, H1, H2, H3, H4);
+
+            for i in 0..80 {
+                // https://datatracker.ietf.org/doc/html/rfc3174#section-5
+                let (f, k) = match i {
+                    0..=19 => ((b & c) | ((!b) & d), 0x5A827999),
+                    20..=39 => (b ^ c ^ d, 0x6ED9EBA1),
+                    40..=59 => ((b & c) | (b & d) | (c & d), 0x8F1BBCDC),
+                    _ => (b ^ c ^ d, 0xCA62C1D6),
+                };
+
+                // https://datatracker.ietf.org/doc/html/rfc3174#section-6.1 (d)
+                let temp = a
+                    .rotate_left(5)
+                    .wrapping_add(f)
+                    .wrapping_add(e)
+                    .wrapping_add(w[i])
+                    .wrapping_add(k);
+
+                e = d;
+                d = c;
+                c = b.rotate_left(30);
+                b = a;
+                a = temp;
+            }
+        }
         [0; 20]
     }
 
@@ -37,8 +64,8 @@ impl Sha1 {
     }
 
     /// Builds W sequence array from a 512-bit chunk.
-    ///
-    /// https://datatracker.ietf.org/doc/html/rfc3174#section-6.1 a and b
+    //
+    // https://datatracker.ietf.org/doc/html/rfc3174#section-6.1 (a) and (b)
     fn build_w_sequence(&mut self, chunk: &[u8]) -> [u32; 80] {
         let mut w = [0u32; 80];
 
